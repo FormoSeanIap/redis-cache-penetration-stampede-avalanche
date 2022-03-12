@@ -18,12 +18,14 @@ const stampede = async (req, res, next) => {
   /*============ cache stampede prevention ============*/
   const isFirst = await cache.SETNX(CACHE_KEY);
   await cache.expire(CACHE_KEY, CACHE_EXP);
+  // console.log(isFirst);
   if (!isFirst) {
     setTimeout(async () => {
+      /*============ TODO: 為什麼有時候會失敗？是不是因為setTimeout可能會比promise早丟進queue而且還執行完 ============*/
       cacheData = await cache.get(CACHE_KEY);
       res.status(200).json({ data: JSON.parse(cacheData), source: "cache" });
-    }, 0);
-    /*============ TODO: 為什麼有時候會失敗？是不是因為setTimeout可能會比promise早丟進queue而且還執行完 ============*/
+    }, 1000);
+    // res.status(200).json({msg: 'wait'});
     return;
   }
   

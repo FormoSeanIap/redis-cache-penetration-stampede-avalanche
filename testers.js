@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 async function axiosReqAll () {  
-  const result = await axios.all([req1(),req2()]);
+  const result = await axios.all([req1(),req2(),req3()]);
   const data = result.map(res => res.data)
   console.log(data);
 }
@@ -11,6 +11,10 @@ function req1() {
 }
 
 function req2() {
+  return axios.get('http://localhost:3000/stampede');
+}
+
+function req3() {
   return axios.get('http://localhost:3000/stampede');
 }
 
