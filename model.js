@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const mysql = require('mysql2/promise');
 const redis = require('redis');
+const ioRedis = require("ioredis");
 
 const db = mysql.createPool({
   host     : process.env.DB_HOST,
@@ -11,8 +12,10 @@ const db = mysql.createPool({
 });
 
 const cache = redis.createClient({
-  host: process.env.REDIS_HOST,
-  port: process.env.REDIS_PORT,
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+  },  
   username: process.env.REDIS_USERNAME,
   password: process.env.REDIS_PWD,
 });
@@ -27,4 +30,40 @@ cache.on("error", (err) => {
   console.log("Redis error: ", err);
 });
 
-module.exports =  { db, cache };
+
+const redisCluster = new ioRedis.Cluster([
+  {
+    port: 7000,
+    host: "127.0.0.1",
+  },
+  // {
+  //   port: 7001,
+  //   host: "127.0.0.1",
+  // },
+  // {
+  //   port: 7002,
+  //   host: "127.0.0.1",
+  // },
+  // {
+  //   port: 7003,
+  //   host: "127.0.0.1",
+  // },
+  // {
+  //   port: 7004,
+  //   host: "127.0.0.1",
+  // },
+  // {
+  //   port: 7005,
+  //   host: "127.0.0.1",
+  // },
+  // {
+  //   port: 7006,
+  //   host: "127.0.0.1",
+  // },
+  // {
+  //   port: 7007,
+  //   host: "127.0.0.1",
+  // },
+]);
+
+module.exports =  { db, cache, redisCluster };

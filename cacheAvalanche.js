@@ -1,11 +1,10 @@
-const { db, cache } = require('./model');
+const { db, redisCluster } = require('./model');
 const { CACHE_KEY, CACHE_EXP, product_id } = require('./testData');
 
-const normalCache = async (req, res, next) => {
+const avalanche = async (req, res, next) => {
   let cacheData;
-
   try {
-    cacheData = await cache.get(CACHE_KEY);
+    cacheData = await redisCluster.get(CACHE_KEY);
   } catch (err) {
     console.error(`Get cache data error: ${err}`);
   }
@@ -26,8 +25,8 @@ const normalCache = async (req, res, next) => {
 
   if (dbData) {
     try {
-      await cache.set(CACHE_KEY, JSON.stringify(dbData));
-      await cache.expire(CACHE_KEY, CACHE_EXP);
+      await redisCluster.set(CACHE_KEY, JSON.stringify(dbData));
+      await redisCluster.expire(CACHE_KEY, CACHE_EXP);
     } catch (err) {
       console.error(`Set cache data error: ${err}`);
     }
@@ -39,4 +38,4 @@ const normalCache = async (req, res, next) => {
   return;  
 }
 
-module.exports = { normalCache };
+module.exports = { avalanche };

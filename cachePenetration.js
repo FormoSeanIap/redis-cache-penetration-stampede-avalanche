@@ -23,28 +23,16 @@ const penetration = async (req, res, next) => {
   } catch (err) {
     console.error(`Get db data error: ${err}`);
   }
-
-  if (dbData) {
-    try {
-      await cache.set(CACHE_KEY, JSON.stringify(dbData));
-      await cache.expire(CACHE_KEY, CACHE_EXP);
-      res.status(200).json({ data: dbData, source: "DB" });
-      return;
-    } catch (err) {
-      console.error(`Set cache data error: ${err}`);
-    }
-  } else {
-    /*============ return {} if no data in DB ============*/    
-    try {
-      dbData = {};
-      await cache.set(CACHE_KEY, JSON.stringify(dbData));
-      await cache.expire(CACHE_KEY, CACHE_EXP);
-      res.status(200).json({ data: dbData, source: "db" });
-      return;
-    } catch (err) {
-      console.error(`Set cache data error: ${err}`);
-    }
-  }
+  /*============ cache penetration prevention ============*/  
+  if (!dbData) dbData = {};
+  try {
+    await cache.set(CACHE_KEY, JSON.stringify(dbData));
+    await cache.expire(CACHE_KEY, CACHE_EXP);
+    res.status(200).json({ data: dbData, source: "DB" });
+    return;
+  } catch (err) {
+    console.error(`Set cache data error: ${err}`);
+  } 
 }
 
 module.exports = { penetration };
