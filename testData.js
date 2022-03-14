@@ -1,4 +1,4 @@
-const product_id = -1;
+const product_id = 1;
 const CACHE_KEY = `cacheData ${product_id}`;
 const CACHE_EXP = 10;
 

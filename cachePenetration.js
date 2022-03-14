@@ -23,8 +23,10 @@ const penetration = async (req, res, next) => {
   } catch (err) {
     console.error(`Get db data error: ${err}`);
   }
+
   /*============ cache penetration prevention ============*/  
   if (!dbData) dbData = {};
+  
   try {
     await cache.set(CACHE_KEY, JSON.stringify(dbData));
     await cache.expire(CACHE_KEY, CACHE_EXP);
