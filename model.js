@@ -30,11 +30,10 @@ cache.on("error", (err) => {
   console.log("Redis error: ", err);
 });
 
-
 const redisCluster = new ioRedis.Cluster([
   {
-    port: process.env.CLUSTER_1_HOST,
-    host: process.env.CLUSTER_1_PORT,
+    port: process.env.CLUSTER_1_PORT,
+    host: process.env.CLUSTER_1_HOST,
   },
   // {
   //   port: 7001,
