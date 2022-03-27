@@ -1,7 +1,8 @@
 const { db, cache } = require('./model');
-const { CACHE_KEY, CACHE_EXP, product_id } = require('./testData');
+const { CACHE_KEY, CACHE_EXP } = require('./testData');
 
 const normalCache = async (req, res, next) => {
+  const { id } = req.query  
   let cacheData;
 
   try {
@@ -16,9 +17,8 @@ const normalCache = async (req, res, next) => {
   } 
 
   const sql = 'SELECT * FROM products WHERE id = ?';
-  const preSta = [product_id];
+  const preSta = [id];
   let dbData;
-  console.log('test')
   try {
     [[dbData]] = await db.execute(sql, preSta);
   } catch (err) {

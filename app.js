@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const { normalCache } = require('./normalCache');
+const { normalCache } = require('./cacheNormal');
 const { penetration } = require('./cachePenetration');
 const { stampede } = require('./cacheStampede');
 const { avalanche } = require('./cacheAvalanche');

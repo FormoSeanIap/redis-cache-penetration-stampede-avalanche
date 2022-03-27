@@ -1,7 +1,8 @@
 const { db, cache } = require('./model');
-const { CACHE_KEY, CACHE_EXP, product_id } = require('./testData');
+const { CACHE_KEY, CACHE_EXP } = require('./testData');
 
 const penetration = async (req, res, next) => {
+  const { id } = req.query  
   let cacheData;
   try {
     cacheData = await cache.get(CACHE_KEY);
@@ -15,7 +16,7 @@ const penetration = async (req, res, next) => {
   } 
 
   const sql = 'SELECT * FROM products WHERE id = ?';
-  const preSta = [product_id];
+  const preSta = [id];
   let dbData;
 
   try {
