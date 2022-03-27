@@ -16,19 +16,19 @@ const stampede = async (req, res, next) => {
   }
   
   /*============ cache stampede prevention ============*/
-  const isFirst = await cache.SETNX(CACHE_KEY);
-  // console.log(isFirst);
-  await cache.expire(CACHE_KEY, CACHE_EXP);
-  if (!isFirst) {
-    while(true) {
-      cacheData = await cache.get(CACHE_KEY);
-      if (cacheData) {
-        res.status(200).json({ data: JSON.parse(cacheData), source: "cache" });
-        break;
-      }
-    }
-    return;
-  }
+  // const isFirst = await cache.SETNX(CACHE_KEY);
+  // // console.log(isFirst);
+  // await cache.expire(CACHE_KEY, CACHE_EXP);
+  // if (!isFirst) {
+  //   while(true) {
+  //     cacheData = await cache.get(CACHE_KEY);
+  //     if (cacheData) {
+  //       res.status(200).json({ data: JSON.parse(cacheData), source: "cache" });
+  //       break;
+  //     }
+  //   }
+  //   return;
+  // }
   
   const sql = 'SELECT * FROM products WHERE id = ?';
   const preSta = [product_id];
