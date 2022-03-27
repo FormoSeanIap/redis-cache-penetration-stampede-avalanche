@@ -176,11 +176,11 @@ Start the server, and check if there is no error in the console.
 
 Send a GET request to `localhost:3000/normal?id=1`, you will see the first response coming from DB, and other coming from cache in the next 10 seconds.
 
-[1-cach-normal-1.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d4880d9d-947a-4eaf-99bb-d447f189f6dd/1-cach-normal-1.mp4)
+https://user-images.githubusercontent.com/55405280/160271199-966da942-ce7a-46b1-ac6c-35555f097100.mp4
 
 Send a GET request to `localhost:3000/normal?id=-1`, you will see all responses coming from DB, because there is no data. This is cache penetration.
 
-[1-cach-normal-2.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/bf655012-e9c2-4e32-92c7-92dea853cf8f/1-cach-normal-2.mp4)
+https://user-images.githubusercontent.com/55405280/160271205-f44ee69d-ecdc-407e-a218-1a1bafaaef38.mp4
 
 The code is written in `cacheNormal.js`, which means if we simply set cache but do nothing else.
 
@@ -188,11 +188,11 @@ The code is written in `cacheNormal.js`, which means if we simply set cache but 
 
 Then, send a GET request to `localhost:3000/penetration?id=1`, you will see the first response coming from DB, and other coming from cache in the next 10 seconds, as epected.
 
-[2-cache-penetration-1.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/5f68abdb-1643-453e-9627-76ea11538dd8/2-cache-penetration-1.mp4)
+https://user-images.githubusercontent.com/55405280/160271217-c729b136-4e11-46fe-9b37-3a75d9da6930.mp4
 
 But this time, send a GET request to `localhost:3000/penetration?id=-1`, you will see responses other than the first coming from cache in the next 10 seconds.
 
-[2-cache-penetration-2.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/01363973-371a-4c08-868a-79932cab71a7/2-cache-penetration-2.mp4)
+https://user-images.githubusercontent.com/55405280/160271219-92f86f0f-6017-4bf6-9f6c-1f9058cd3f38.mp4
 
 This is because I asked the server to add a new key with an empty value if there is no DB data, as what follows
 
@@ -224,13 +224,13 @@ Suppose there are three customers sending requests for the same data at the same
 
 As explained before, these three requests will be hitting DB at the same time, like the following video.
 
-[3-cache-stampede-1.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/4ef7048d-cb0e-4868-a5f5-cbace6efff66/3-cache-stampede-1.mp4)
+https://user-images.githubusercontent.com/55405280/160271224-67452288-def2-49d5-a32b-84632f872e56.mp4
 
 ---
 
 Run `node testers.js`, and you will see three requests all coming from DB.
 
-[3-cache-stampede-2.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/6e27b7ad-6883-4a0d-af0b-180457618cee/3-cache-stampede-2.mp4)
+https://user-images.githubusercontent.com/55405280/160271232-eaef313c-c247-4cb9-8c4f-e02874a1dc01.mp4
 
 ## With Stampede Prevention
 
@@ -254,7 +254,7 @@ const isFirst = await cache.SETNX(CACHE_KEY);
 
 Run `node testers.js`, and you will see only one request coming from DB.
 
-[3-cache-stampede-3.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f3e4d908-88ad-4668-a301-d5690eb1b5a4/3-cache-stampede-3.mp4)
+https://user-images.githubusercontent.com/55405280/160271245-b4977e02-eda9-478c-a2c8-0444649d0669.mp4
 
 What happens here is that, I ask these three requests to do `SETNX` right before they are going to DB. 
 
@@ -262,11 +262,11 @@ SETNX is almost the same as SET, but with a condition of `NOT EXIST`. Redis make
 
 We can console the `isFirst` to confirm this.
 
-[3-cache-stampede-4.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/01cc8caa-1360-4159-9144-e0a7b2af5634/3-cache-stampede-4.mp4)
+https://user-images.githubusercontent.com/55405280/160271250-37120f7a-55c2-4975-81a4-dd43bfe881b7.mp4
 
 So that I make sure that there are two requests lost the SETNX race and get a `false` return. I ask them to keep trying to get data from the cache with `while(true)`. After the cache has been updated by the request which won the SETNX race, these two requests will get cache and leave this loop, like the following.
 
-[3-cache-stampede-5.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/913cc232-d1ab-405d-b756-f9eeaf6798eb/3-cache-stampede-5.mp4)
+https://user-images.githubusercontent.com/55405280/160271260-473ab2e1-e22e-477f-abfb-750c39dcf018.mp4
 
 By the way, I use `axios` to send requests, and `axios.all()` to send all requests at the same time. See `testers.js` for details.
 
@@ -278,7 +278,7 @@ Then, shutdown the Redis server which listens on port 7002. In the following fiv
 
 But after five seconds, cache will work as if nothing happened.
 
-[4-cache-avalanche-1.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/a15d9b37-da79-4f50-8d94-2a548a0609fe/4-cache-avalanche-1.mp4)
+https://user-images.githubusercontent.com/55405280/160271264-ec8a635d-0e23-4fa7-9852-69188e4e2da4.mp4
 
 ---
 
