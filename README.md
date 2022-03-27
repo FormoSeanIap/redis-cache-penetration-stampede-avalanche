@@ -1,5 +1,7 @@
 # A Complete Beginner Guide for Cache Penetration, Stampede, Avalanche
 
+You can also find this article on [Medium](https://philosophyotaku.medium.com/a-complete-beginner-guide-for-cache-penetration-stampede-avalanche-ecadd7f16009)
+
 # Introduction
 
 When it comes to cache, one of the biggest issues would be cache penetration, stampede, and avalanche, all of which are problems that need to be solved.
