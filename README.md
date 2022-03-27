@@ -37,7 +37,7 @@ If it is a normal request, say, with the id as 1, then there will be cache in Re
 
 However, since no one will have any product with the id as -1, there will be no cache, and all the following requests will be hitting the database. 
 
-![Untitled](./img/cache-01.jpg)
+<img src="./img/cache-01.jpg" width="50%">
 
 ## Solutions
 
@@ -53,7 +53,7 @@ This occurs when there are tons of requests at the same time, for the same key, 
 
 For example, a great amount of people are competing for the same product at the same time. 
 
-![Untitled](./img/cache-02.jpg)
+<img src="./img/cache-02.jpg" width="50%">
 
 ## Solutions
 
@@ -117,15 +117,15 @@ If it is the case that all cache simply expired, it might also be Redis which is
 - The slave server will copy any data in the master server (backup).
 - While the master sever can read and write, the slave server can only read.
 
-![a main server with several slave servers](./img/cache-06.jpg)
+<img src="./img/cache-06.jpg" width="50%">
 
 a main server with several slave servers
 
-![a slave will replace the master if the master is dead](./img/cache-07.jpg)
+<img src="./img/cache-07.jpg" width="50%">
 
 a slave will replace the master if the master is dead
 
-![This is what will become finally](./img/cache-08.jpg)
+<img src="./img/cache-08.jpg" width="50%">
 
 This is what will become finally
 
@@ -134,7 +134,7 @@ This is what will become finally
 - A cluster consists of at least three master-slave sets (at least six nodes), and a set will have its own slots.
 - Master servers will do health check for others beside themselves. For example, the node1-master will not do health check for the node3-master in the following schema.
 
-![Untitled](./img/cache-09.jpg)
+<img src="./img/cache-09.jpg" width="50%">
 
 - If a master dies and is found by another master, a slave of the dead master will promoted as the new master.
 
@@ -143,8 +143,8 @@ This is what will become finally
 
 </aside>
 
-![Untitled](./img/cache-10.jpg)
-![Untitled](./img/cache-11.jpg)
+<img src="./img/cache-10.jpg" width="50%">
+<img src="./img/cache-11.jpg" width="50%">
 
 - Any data coming from a server will be hashed and get a number for a specific slot.
 - Any data will be stored into a master-slave set based on this new number.
