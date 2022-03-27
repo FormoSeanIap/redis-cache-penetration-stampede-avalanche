@@ -92,15 +92,9 @@ If it is the case that all cache simply expired, it might also be Redis which is
 
 |  | Penetration | Stampede | Avalanche |
 | --- | --- | --- | --- |
-| Definition | 1. No corresponding key(data) in DB   2. Too many requests in a short time | 1. Too many requests simultaneously   2. For the same key   3. The cache just expired | 1. Too many requests simultaneously   2. For different keys   3. All cache expired or Redis is dead |
+| Definition | 1. No corresponding key(data) in DB<br />2. Too many requests in a short time | 1. Too many requests simultaneously<br />2. For the same key<br />3. The cache just expired | 1. Too many requests simultaneously<br />2. For different keys<br />3. All cache expired or Redis is dead |
 | Scenes | A hacker sends tons of requests for a non-existing key.  | Too many people are competing for the same product. | Holiday sales |
-| Solutions | 1. Rate limiter
-2. Bloom Filter
-3. Store a key for a short time in Redis even if there is no key. | 1. Frequently update caches
-2. XFetch
-3. Lock the key while the first request appears. | 1. Adjust the TTL
-2. Several layers of protection
-3. Redis sentinel or clusters |
+| Solutions | 1. Rate limiter<br />2. Bloom Filter<br />3. Store a key for a short time in Redis even if there is no key. | 1. Frequently update caches<br />2. XFetch<br />3. Lock the key while the first request appears. | 1. Adjust the TTL<br />2. Several layers of protection<br />3. Redis sentinel or clusters |
 
 # Preparation for Implementation
 
