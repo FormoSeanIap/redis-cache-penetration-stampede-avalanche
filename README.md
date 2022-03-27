@@ -35,7 +35,7 @@ If it is a normal request, say, with the id as 1, then there will be cache in Re
 
 However, since no one will have any product with the id as -1, there will be no cache, and all the following requests will be hitting the database. 
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/8c9cfe57-ee10-4dfc-8524-3dd02b9ae564/Untitled.png)
+![Untitled](./img/cache-01.jpg)
 
 ## Solutions
 
@@ -51,7 +51,7 @@ This occurs when there are tons of requests at the same time, for the same key, 
 
 For example, a great amount of people are competing for the same product at the same time. 
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/48a59167-3a54-45b8-866b-6f69094103ed/Untitled.png)
+![Untitled](./img/cache-02.jpg)
 
 ## Solutions
 
@@ -69,13 +69,13 @@ This happens a lot in the beginning of a holiday sales.
 
 This is called avalanche, because the death of Redis will cause the death of database, eventually will lead to the death of everything, like an avalanche. 
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/9383f954-f597-47af-846d-72a976e0e446/Untitled.png)
+![Untitled](./img/cache-03.jpg)
 
 And if the database is dead and rebooting, all requests will be pending.
 
 Right after the database is open, all pending requests will flush into the database, which will probably kill the database again.
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/3c2d013c-2d3f-42f0-a319-3a5c7f2439d3/Untitled.png)
+![Untitled](./img/cache-04.jpg)
 
 If it is the case that all cache simply expired, it might also be Redis which is killed by all the pending request (avalanche again). 
 
@@ -84,7 +84,7 @@ If it is the case that all cache simply expired, it might also be Redis which is
 1. Simply adjust the TTL (time to live) of cache.
 2. Building several layers of protection. For example,
     
-    ![cache-5.jpg](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/7d472057-8c34-4a6f-9516-fb36e7eebf50/cache-5.jpg)
+    ![cache-5.jpg](./img/cache-05.jpg)
     
 3. Use Redis sentinel or clusters.
 
@@ -126,15 +126,15 @@ If it is the case that all cache simply expired, it might also be Redis which is
 - The slave server will copy any data in the master server (backup).
 - While the master sever can read and write, the slave server can only read.
 
-![a main server with several slave servers](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f9062e27-024f-444b-809c-f0588962f798/Untitled.png)
+![a main server with several slave servers](./img/cache-06.jpg)
 
 a main server with several slave servers
 
-![a slave will replace the master if the master is dead](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/658ec79a-436e-4417-b949-346c94292ee3/Untitled.png)
+![a slave will replace the master if the master is dead](./img/cache-07.jpg)
 
 a slave will replace the master if the master is dead
 
-![This is what will become finally](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/197dc1ea-9373-4e0f-9baa-a454e34319b4/Untitled.png)
+![This is what will become finally](./img/cache-08.jpg)
 
 This is what will become finally
 
@@ -143,7 +143,7 @@ This is what will become finally
 - A cluster consists of at least three master-slave sets (at least six nodes), and a set will have its own slots.
 - Master servers will do health check for others beside themselves. For example, the node1-master will not do health check for the node3-master in the following schema.
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d20e181c-ce87-4cb1-bc86-8fc9e39b95aa/Untitled.png)
+![Untitled](./img/cache-09.jpg)
 
 - If a master dies and is found by another master, a slave of the dead master will promoted as the new master.
 
@@ -152,14 +152,14 @@ This is what will become finally
 
 </aside>
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/e9b84f07-c5e0-476b-b2cb-6895a4fffbc1/Untitled.png)
+![Untitled](./img/cache-10.jpg)
 
 - Any data coming from a server will be hashed and get a number for a specific slot.
 - Any data will be stored into a master-slave set based on this new number.
 - Any data is still accessible in the whole cluster.
 - This method save storage since we don’t need to store data in all master-slave sets, and data is still accessible in any master-slave set in this cluster.
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/6b9767fe-440a-4ae0-b153-7d86db2a0e28/Untitled.png)
+![Untitled](./img/cache-11.jpg)
 
 ### Build Clusters
 
@@ -296,13 +296,13 @@ Let me explain what happens here.
 
 First, the cache data is stored into the third master-slave set.
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/19c5206d-c18d-402e-96ce-afc748eb17e5/Untitled.png)
+![Untitled](./img/cache-14.jpg)
 
 Then, we shutdown the 7002-server, so in the next five seconds, all requests will be pending.
 
 But after that, the 7007-server will be promoted as the master, so it will be working again. 
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/4c7c6ad7-7363-4c83-8794-95dcf2613649/Untitled.png)
+![Untitled](./img/cache-15.jpg)
 
 ---
 
