@@ -92,12 +92,7 @@ If it is the case that all cache simply expired, it might also be Redis which is
 
 |  | Penetration | Stampede | Avalanche |
 | --- | --- | --- | --- |
-| Definition | 1. No corresponding key(data) in DB
-2. Too many requests in a short time | 1. Too many requests simultaneously
-2. For the same key
-3. The cache just expired | 1. Too many requests simultaneously
-2. For different keys
-3. All cache expired or Redis is dead |
+| Definition | 1. No corresponding key(data) in DB   2. Too many requests in a short time | 1. Too many requests simultaneously   2. For the same key   3. The cache just expired | 1. Too many requests simultaneously   2. For different keys   3. All cache expired or Redis is dead |
 | Scenes | A hacker sends tons of requests for a non-existing key.  | Too many people are competing for the same product. | Holiday sales |
 | Solutions | 1. Rate limiter
 2. Bloom Filter
@@ -153,23 +148,24 @@ This is what will become finally
 </aside>
 
 ![Untitled](./img/cache-10.jpg)
+![Untitled](./img/cache-11.jpg)
 
 - Any data coming from a server will be hashed and get a number for a specific slot.
 - Any data will be stored into a master-slave set based on this new number.
 - Any data is still accessible in the whole cluster.
 - This method save storage since we don’t need to store data in all master-slave sets, and data is still accessible in any master-slave set in this cluster.
 
-![Untitled](./img/cache-11.jpg)
+![Untitled](./img/cache-12.jpg)
 
 ### Build Clusters
 
-Completely follow [Creating a Cluster in Redis - YouTube](https://www.youtube.com/watch?v=N8BkmdZzxDg&t=402s&ab_channel=Redis) to build a Redis cluster.
+Completely follow [Creating a Cluster in Redis - YouTube](https://www.youtube.com/watch?v=N8BkmdZzxDg&ab_channel=Redis) to build a Redis cluster.
 
 You can change the port as you want.
 
 After that, you should be seeing something like this with `ps awx |grep redis-server`
 
-![redis-cluster-running.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/9c33f9ac-43c4-48bb-b851-d81821719c2e/redis-cluster-running.png)
+![redis-cluster-running.png](./img/cache-13.png)
 
 Then, go back to the `.env` file and finish setting `CLUSTER_1` related settings. 
 
