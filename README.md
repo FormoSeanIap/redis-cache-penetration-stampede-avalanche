@@ -1,36 +1,392 @@
-# cache-test
-- This is a simple cache test for cache penetration, cache stampede, and cache avalanche.
-- Can be used to understand the basic ideas of these three topics. 
+# Introduction
 
-## Deployment
-1. npm install
-2. Start MySQL Server (ver. 8.0 or higher)
-3. Import database:
-   i. mysql -u <user_name> -p <stylish_db_name> < stylish_backend.sql
-4. Build one redis client (ver. 6.2.6 or higher)
-5. Create .env file based on .env-template
-6. (optional) Build 8 redis client at port 7000, 7001, 7002, 7003, 7004, 7005, 7006, 7007, based on https://www.youtube.com/watch?v=N8BkmdZzxDg&t=402s
+When it comes to cache, one of the biggest issues would be cache penetration, stampede, and avalanche, all of which are problems that need to be solved.
 
-## Testing
-- There are four APIs, in app.js
-- Use nodemon app.js to start the server, and test it sending requests to these four APIs.
+This article will be divided into two main parts.
 
-### normal 
-- Send requests to normal API (localhost:3000/). Will see first response from DB, and second response from cache. (cache expiration time is 10 seconds)
-- Set product_id in testData.js as any integer other than 1 (like -1), and send requests again. Will see all responses from DB.
+In the first part, I will introduce what they are and how to solve the problems in theory. 
 
-### penetration
-- Send requests to penetration API(localhost:3000/penetration), while product_id remains -1. Will see first response from DB, while any other response from cache. 
-- Will have to change product_id back to 1, for other testings. 
-- See "cache penetration prevention" in cachePenetration.js 
+In the second part, there will be a practical example for each problem with real codes. 
 
-### stampede
-- Open terminal, and execute node testers.js, to send three API requests simultaneously (to localhost:3000/stampede). 
-- Will see only one response from DB, but two other from cache.
-- See "cache stampede prevention" in cacheStampede.js
+- Prerequisite
+    - You need the basic idea of cache and Redis, since the following experiments will be done with Redis.
+    - It will be better to have the basic idea of Node.js (Express.js), the same reason as Redis.
+    - It will also be better to have the basic idea of relational database and MySQL.
 
-### avalanche
-- Remember to turn on the eight cache clients, in redis-cluster modes, as mentioned in deployment.
-- Send requests to localhost:3000/avalanche. Will only get first response from DB in every ten seconds.
-- Try to shutdown one master server which receive the data (probably the one who listens to port 7002) in the redis cluster.
-- That master server will be replaced by its slave server, and the service will go down for a period of time based on how you set the configure files in redis cluster. 
+---
+
+Before entering the main part, it should be noted here that when one of these issues happen, it is the database which will take much more pressure. 
+
+Normally, we want to have Redis taking the pressure of as many requests as possible, but tons of requests will be hitting the database if one of these issue occur, and our database may go down due to this. 
+
+In other words, we want to avoid any of these issues because we don’t want all requests to be hitting the database, since what we want to protect is nothing more than the **database** itself. 
+
+# ****Cache Penetration****
+
+## Definition
+
+This happens when there is no corresponding key(data) in DB. Since there is no such key, there will be no cache for sure, and all the same requests will be hitting the database.
+
+For example, a hacker is trying to attack your database, so he sends tons of requests in a few moments for a product with the id as -1. 
+
+If it is a normal request, say, with the id as 1, then there will be cache in Redis after the first request. 
+
+However, since no one will have any product with the id as -1, there will be no cache, and all the following requests will be hitting the database. 
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/8c9cfe57-ee10-4dfc-8524-3dd02b9ae564/Untitled.png)
+
+## Solutions
+
+1. Use rate limiter.
+2. Use bloom filter to simply return the response if no such key exists.
+3. If the key does not exist, simply send back an empty value and store it in Redis for a short period of time.
+
+# ****Cache Stampede (Breakdown) (Thundering Herd problem)****
+
+## Definition
+
+This occurs when there are tons of requests at the same time, for the same key, and the cache just expired. 
+
+For example, a great amount of people are competing for the same product at the same time. 
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/48a59167-3a54-45b8-866b-6f69094103ed/Untitled.png)
+
+## Solutions
+
+1. Simply use a worker to frequently update caches.
+2. XFetch: set up a worker to update caches for the hot keys before expiration.
+3. lock: Lock the key right after receiving the first request, until the cache is updated. Others will have to wait until the cache is updated. 
+
+# ****Cache Avalanche (Cascading Failures)****
+
+## Definition
+
+Tons of requests for different keys appear, and are hitting the database because Redis is dead or all caches just expired. 
+
+This happens a lot in the beginning of a holiday sales. 
+
+This is called avalanche, because the death of Redis will cause the death of database, eventually will lead to the death of everything, like an avalanche. 
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/9383f954-f597-47af-846d-72a976e0e446/Untitled.png)
+
+And if the database is dead and rebooting, all requests will be pending.
+
+Right after the database is open, all pending requests will flush into the database, which will probably kill the database again.
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/3c2d013c-2d3f-42f0-a319-3a5c7f2439d3/Untitled.png)
+
+If it is the case that all cache simply expired, it might also be Redis which is killed by all the pending request (avalanche again). 
+
+## Solution
+
+1. Simply adjust the TTL (time to live) of cache.
+2. Building several layers of protection. For example,
+    
+    ![cache-5.jpg](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/7d472057-8c34-4a6f-9516-fb36e7eebf50/cache-5.jpg)
+    
+3. Use Redis sentinel or clusters.
+
+# First Part Conclusion
+
+|  | Penetration | Stampede | Avalanche |
+| --- | --- | --- | --- |
+| Definition | 1. No corresponding key(data) in DB
+2. Too many requests in a short time | 1. Too many requests simultaneously
+2. For the same key
+3. The cache just expired | 1. Too many requests simultaneously
+2. For different keys
+3. All cache expired or Redis is dead |
+| Scenes | A hacker sends tons of requests for a non-existing key.  | Too many people are competing for the same product. | Holiday sales |
+| Solutions | 1. Rate limiter
+2. Bloom Filter
+3. Store a key for a short time in Redis even if there is no key. | 1. Frequently update caches
+2. XFetch
+3. Lock the key while the first request appears. | 1. Adjust the TTL
+2. Several layers of protection
+3. Redis sentinel or clusters |
+
+# Preparation for Implementation
+
+## Preparation
+
+1. git clone from: ‣
+2. `npm install`
+3. Start MySQL Server (ver. 8.0 or higher)
+4. Import database: `mysql -u <user_name> -p <stylish_db_name> < dump.sql`
+5. Start a Redis Server (ver. 6.2.6 or higher)
+6. Create `.env` file based on `.env-template` (The cluster-related one will be explained later)
+
+## Build Redis Cluster
+
+### The Basic Idea
+
+- The core idea is that, we cannot make sure that a Redis server will never go down, so we build a backup one.
+- The slave server will copy any data in the master server (backup).
+- While the master sever can read and write, the slave server can only read.
+
+![a main server with several slave servers](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f9062e27-024f-444b-809c-f0588962f798/Untitled.png)
+
+a main server with several slave servers
+
+![a slave will replace the master if the master is dead](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/658ec79a-436e-4417-b949-346c94292ee3/Untitled.png)
+
+a slave will replace the master if the master is dead
+
+![This is what will become finally](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/197dc1ea-9373-4e0f-9baa-a454e34319b4/Untitled.png)
+
+This is what will become finally
+
+### Clusters Concept
+
+- A cluster consists of at least three master-slave sets (at least six nodes), and a set will have its own slots.
+- Master servers will do health check for others beside themselves. For example, the node1-master will not do health check for the node3-master in the following schema.
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d20e181c-ce87-4cb1-bc86-8fc9e39b95aa/Untitled.png)
+
+- If a master dies and is found by another master, a slave of the dead master will promoted as the new master.
+
+<aside>
+💡 If all servers in a master-slave set goes down, the whole cluster goes down.
+
+</aside>
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/e9b84f07-c5e0-476b-b2cb-6895a4fffbc1/Untitled.png)
+
+- Any data coming from a server will be hashed and get a number for a specific slot.
+- Any data will be stored into a master-slave set based on this new number.
+- Any data is still accessible in the whole cluster.
+- This method save storage since we don’t need to store data in all master-slave sets, and data is still accessible in any master-slave set in this cluster.
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/6b9767fe-440a-4ae0-b153-7d86db2a0e28/Untitled.png)
+
+### Build Clusters
+
+Completely follow [Creating a Cluster in Redis - YouTube](https://www.youtube.com/watch?v=N8BkmdZzxDg&t=402s&ab_channel=Redis) to build a Redis cluster.
+
+You can change the port as you want.
+
+After that, you should be seeing something like this with `ps awx |grep redis-server`
+
+![redis-cluster-running.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/9c33f9ac-43c4-48bb-b851-d81821719c2e/redis-cluster-running.png)
+
+Then, go back to the `.env` file and finish setting `CLUSTER_1` related settings. 
+
+<aside>
+💡 You might be wondering why we only need to connect to one server, and it is exactly valid to connect to only one server. It is also possible to make connections to all of them, go see `ioRedis` in `model.js` for details.
+
+</aside>
+
+# ****Cache Penetration**** Implementation
+
+## Without Penetration Prevention
+
+Start the server, and check if there is no error in the console.
+
+Send a GET request to `localhost:3000/normal?id=1`, you will see the first response coming from DB, and other coming from cache in the next 10 seconds.
+
+[1-cach-normal-1.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d4880d9d-947a-4eaf-99bb-d447f189f6dd/1-cach-normal-1.mp4)
+
+Send a GET request to `localhost:3000/normal?id=-1`, you will see all responses coming from DB, because there is no data. This is cache penetration.
+
+[1-cach-normal-2.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/bf655012-e9c2-4e32-92c7-92dea853cf8f/1-cach-normal-2.mp4)
+
+The code is written in `cacheNormal.js`, which means if we simply set cache but do nothing else.
+
+## With Penetration Prevention
+
+Then, send a GET request to `localhost:3000/penetration?id=1`, you will see the first response coming from DB, and other coming from cache in the next 10 seconds, as epected.
+
+[2-cache-penetration-1.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/5f68abdb-1643-453e-9627-76ea11538dd8/2-cache-penetration-1.mp4)
+
+But this time, send a GET request to `localhost:3000/penetration?id=-1`, you will see responses other than the first coming from cache in the next 10 seconds.
+
+[2-cache-penetration-2.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/01363973-371a-4c08-868a-79932cab71a7/2-cache-penetration-2.mp4)
+
+This is because I asked the server to add a new key with an empty value if there is no DB data, as what follows
+
+```jsx
+try {
+    [[dbData]] = await db.execute(sql, preSta);
+  } catch (err) {
+    console.error(`Get db data error: ${err}`);
+  }
+
+  /*============ cache penetration prevention ============*/  
+  if (!dbData) dbData = {};
+  
+  try {
+    await cache.set(CACHE_KEY, JSON.stringify(dbData));
+    await cache.expire(CACHE_KEY, CACHE_EXP);
+    res.status(200).json({ data: dbData, source: "DB" });
+    return;
+  } catch (err) {
+    console.error(`Set cache data error: ${err}`);
+  }
+```
+
+# ****Cache Stampede**** Implementation
+
+## Without Stampede Prevention
+
+Suppose there are three customers sending requests for the same data at the same time, and the cache just expired.
+
+As explained before, these three requests will be hitting DB at the same time, like the following video.
+
+[3-cache-stampede-1.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/4ef7048d-cb0e-4868-a5f5-cbace6efff66/3-cache-stampede-1.mp4)
+
+---
+
+Run `node testers.js`, and you will see three requests all coming from DB.
+
+[3-cache-stampede-2.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/6e27b7ad-6883-4a0d-af0b-180457618cee/3-cache-stampede-2.mp4)
+
+## With Stampede Prevention
+
+Then, go to `cacheStampede.js` and uncomment the following codes
+
+```jsx
+const isFirst = await cache.SETNX(CACHE_KEY);
+  // console.log(isFirst);
+  await cache.expire(CACHE_KEY, CACHE_EXP);
+  if (!isFirst) {
+    while(true) {
+      cacheData = await cache.get(CACHE_KEY);
+      if (cacheData) {
+        res.status(200).json({ data: JSON.parse(cacheData), source: "cache" });
+        break;
+      }
+    }
+    return;
+  }
+```
+
+Run `node testers.js`, and you will see only one request coming from DB.
+
+[3-cache-stampede-3.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f3e4d908-88ad-4668-a301-d5690eb1b5a4/3-cache-stampede-3.mp4)
+
+What happens here is that, I ask these three requests to do `SETNX` right before they are going to DB. 
+
+SETNX is almost the same as SET, but with a condition of `NOT EXIST`. Redis makes sure that only one request can do SETNX even if these three requests come at the same time, and only the successful one will be returned with `true`. 
+
+We can console the `isFirst` to confirm this.
+
+[3-cache-stampede-4.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/01cc8caa-1360-4159-9144-e0a7b2af5634/3-cache-stampede-4.mp4)
+
+So that I make sure that there are two requests lost the SETNX race and get a `false` return. I ask them to keep trying to get data from the cache with `while(true)`. After the cache has been updated by the request which won the SETNX race, these two requests will get cache and leave this loop, like the following.
+
+[3-cache-stampede-5.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/913cc232-d1ab-405d-b756-f9eeaf6798eb/3-cache-stampede-5.mp4)
+
+By the way, I use `axios` to send requests, and `axios.all()` to send all requests at the same time. See `testers.js` for details.
+
+# Cache Avalanche Implementation
+
+Send a request to `localhost:3000/avalanche`, and it works normally that only the first request comes from DB.
+
+Then, shutdown the Redis server which listens on port 7002. In the following five seconds (I personally set timeout as 5 seconds in the redis config file), the request will fail.
+
+But after five seconds, cache will work as if nothing happened.
+
+[4-cache-avalanche-1.mp4](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/a15d9b37-da79-4f50-8d94-2a548a0609fe/4-cache-avalanche-1.mp4)
+
+---
+
+Let me explain what happens here.
+
+First, the cache data is stored into the third master-slave set.
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/19c5206d-c18d-402e-96ce-afc748eb17e5/Untitled.png)
+
+Then, we shutdown the 7002-server, so in the next five seconds, all requests will be pending.
+
+But after that, the 7007-server will be promoted as the master, so it will be working again. 
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/4c7c6ad7-7363-4c83-8794-95dcf2613649/Untitled.png)
+
+---
+
+After entering any client of a server, we can use `cluster slots` and `cluster info` to see the whole situation of a cluster. 
+
+For example, we can see cluster slots like this right after building a cluster
+
+```
+1) 1) (integer) 0
+   2) (integer) 4095
+   3) 1) "127.0.0.1"
+      2) (integer) 7000
+      3) "45166ee676b7783c4d8c3173ed96d505bda8eb8f"
+   4) 1) "127.0.0.1"
+      2) (integer) 7005
+      3) "e2a62dbefd21bdac9d250514a0d93408c89c0af1"
+2) 1) (integer) 4096
+   2) (integer) 8191
+   3) 1) "127.0.0.1"
+      2) (integer) 7001
+      3) "f644dab9a0126d24e85d74614653de71a1c6a7e0"
+   4) 1) "127.0.0.1"
+      2) (integer) 7006
+      3) "2674da2dea38198d9dd02d639f5f403bd7c61a0a"
+3) 1) (integer) 8192
+   2) (integer) 12287
+   3) 1) "127.0.0.1"
+      2) (integer) 7002
+      3) "37faed0606a873f0313f0199762404a890e54165"
+   4) 1) "127.0.0.1"
+      2) (integer) 7007
+      3) "f22e79c2958769a8a49517d6b30f4187f9a548e1"
+4) 1) (integer) 12288
+   2) (integer) 16383
+   3) 1) "127.0.0.1"
+      2) (integer) 7003
+      3) "3863a8746c9b0e9cb1678f967d7029392eee2fb3"
+   4) 1) "127.0.0.1"
+      2) (integer) 7004
+      3) "c4baaf29c3f2f16e88b838982cf0a42f8316e332"
+```
+
+After the 7002-server went down and is replaced with the 7007-server, it will look like
+
+```
+1) 1) (integer) 0
+   2) (integer) 4095
+   3) 1) "127.0.0.1"
+      2) (integer) 7000
+      3) "45166ee676b7783c4d8c3173ed96d505bda8eb8f"
+   4) 1) "127.0.0.1"
+      2) (integer) 7005
+      3) "e2a62dbefd21bdac9d250514a0d93408c89c0af1"
+2) 1) (integer) 4096
+   2) (integer) 8191
+   3) 1) "127.0.0.1"
+      2) (integer) 7001
+      3) "f644dab9a0126d24e85d74614653de71a1c6a7e0"
+   4) 1) "127.0.0.1"
+      2) (integer) 7006
+      3) "2674da2dea38198d9dd02d639f5f403bd7c61a0a"
+3) 1) (integer) 8192
+   2) (integer) 12287
+   3) 1) "127.0.0.1"
+      2) (integer) 7007
+      3) "f22e79c2958769a8a49517d6b30f4187f9a548e1"
+4) 1) (integer) 12288
+   2) (integer) 16383
+   3) 1) "127.0.0.1"
+      2) (integer) 7003
+      3) "3863a8746c9b0e9cb1678f967d7029392eee2fb3"
+   4) 1) "127.0.0.1"
+      2) (integer) 7004
+      3) "c4baaf29c3f2f16e88b838982cf0a42f8316e332"
+```
+
+We can see in the third slot, there is no 7002 anymore, but only 7007. 
+
+# Conclusion
+
+In this article, I introduce three most famous cache issues and how to deal with them with real implementations. 
+
+For cache penetration, I set a key with an empty value in Redis for a short time.
+
+For cache stampede, I use SETNX to make sure only one request will be hitting my database.
+
+For cache avalanche, I use Redis Cluster as a solution in case the Redis server goes down. 
+
+Thanks for reading until here and hope you learned something.
