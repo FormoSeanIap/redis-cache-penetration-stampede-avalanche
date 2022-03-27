@@ -1,6 +1,17 @@
 # A Complete Beginner Guide for Cache Penetration, Stampede, Avalanche
 
-You can also find this article on [Medium](https://philosophyotaku.medium.com/a-complete-beginner-guide-for-cache-penetration-stampede-avalanche-ecadd7f16009)
+You can also find this article on [Medium](https://philosophyotaku.medium.com/a-complete-beginner-guide-for-cache-penetration-stampede-avalanche-ecadd7f16009)    
+---
+- [Introduction](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#introduction)
+- [cache penetration](https://github.com/FormoSeanIap/cache-test/edit/main/README.md#cache-penetration)
+- [cache stampede](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#cache-stampede-breakdown-thundering-herd-problem)
+- [cache avalanche](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#cache-avalanche-cascading-failures)
+- [first part conclusion](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#first-part-conclusion)
+- [preparation for implementation](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#preparation-for-implementation)
+- [cache penetration implementation](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#cache-penetration-implementation)
+- [cache stampede implementation](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#cache-stampede-implementation)
+- [cache avalanche implementation](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#cache-avalanche-implementation)
+- [conclusion](https://github.com/FormoSeanIap/cache-test/blob/main/README.md#conclusion)
 
 # Introduction
 
