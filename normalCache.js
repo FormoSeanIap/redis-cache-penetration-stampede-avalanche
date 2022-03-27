@@ -18,6 +18,7 @@ const normalCache = async (req, res, next) => {
   const sql = 'SELECT * FROM products WHERE id = ?';
   const preSta = [product_id];
   let dbData;
+  console.log('test')
   try {
     [[dbData]] = await db.execute(sql, preSta);
   } catch (err) {

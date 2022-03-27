@@ -33,8 +33,8 @@ cache.on("error", (err) => {
 
 const redisCluster = new ioRedis.Cluster([
   {
-    port: 7000,
-    host: "127.0.0.1",
+    port: process.env.CLUSTER_1_HOST,
+    host: process.env.CLUSTER_1_PORT,
   },
   // {
   //   port: 7001,
